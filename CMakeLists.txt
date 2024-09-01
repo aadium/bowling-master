@@ -7,7 +7,6 @@ add_executable(cpp_game main.cpp)
 
 include_directories(Dependencies/x64/include)
 
-find_package(glfw3 3 REQUIRED)
 add_library(glfw STATIC IMPORTED)
 set_target_properties(glfw PROPERTIES
         IMPORTED_LOCATION "${CMAKE_CURRENT_SOURCE_DIR}/Dependencies/x64/lib-vc2022/glfw3.lib"
