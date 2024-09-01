@@ -12,4 +12,6 @@ set_target_properties(glfw PROPERTIES
         IMPORTED_LOCATION "${CMAKE_CURRENT_SOURCE_DIR}/Dependencies/x64/lib-vc2022/glfw3.lib"
         INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/Dependencies/x64/include"
 )
-target_link_libraries(cpp_game glfw)
+
+find_package(OpenGL REQUIRED)
+target_link_libraries(cpp_game glfw OpenGL::GL)
