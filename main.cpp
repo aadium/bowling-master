@@ -68,9 +68,12 @@ void renderTrackEdges() {
     glEnd();
 }
 
-void renderText(float x, float y, const std::string& text) {
-
-}
+// void renderText(float x, float y, const std::string& text) {
+//     glRasterPos2f(x, y);
+//     for (char c : text) {
+//         glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, c);
+//     }
+// }
 
 void processInput(GLFWwindow* window) {
     if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS && !ballInMotion) {
@@ -187,7 +190,7 @@ void renderGame() {
     int toppledCount = std::count_if(bottles.begin(), bottles.end(), [](const Bottle& bottle) {
         return bottle.toppled;
     });
-    renderText(-0.9f, 0.9f, "Toppled Bottles: " + std::to_string(toppledCount));
+    //renderText(-0.9f, 0.9f, "Toppled Bottles: " + std::to_string(toppledCount));
 }
 
 int main() {
