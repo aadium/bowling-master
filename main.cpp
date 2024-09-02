@@ -1,129 +1,203 @@
-#include <iostream>
 #include <GLFW/glfw3.h>
 #include <cmath>
-
-// Vertex data for a flat rectangle
-constexpr float vertices[] = {
-    -0.1f, -0.01f,
-    0.1f, -0.01f,
-    0.1f, 0.01f,
-    -0.1f, 0.01f
-};
-
-// Rectangle position
-float posX = 0.0f;
-float posY = -0.8f;
+#include <vector>
+#include <string>
+#include <algorithm>
 
 // Ball properties
-float ballX = 0.0f;
-float ballY = 0.0f;
-float ballRadius = 0.02f;
-float ballVelocityX = 0.006f;
-float ballVelocityY = -0.018f;
+struct Ball {
+    float x, y;
+    float radius;
+    float velocityX, velocityY;
+};
 
-void renderRectangle()
-{
-    // Adjusted vertex data based on position
-    float adjustedVertices[] = {
-        vertices[0] + posX, vertices[1] + posY,
-        vertices[2] + posX, vertices[3] + posY,
-        vertices[4] + posX, vertices[5] + posY,
-        vertices[6] + posX, vertices[7] + posY
-    };
+// Bottle properties
+struct Bottle {
+    float x, y;
+    float radius;
+    float velocityX, velocityY;
+    bool toppled;
+    float toppledTime; // Time since the bottle was toppled
+};
 
-    // Render the rectangle
-    glEnableClientState(GL_VERTEX_ARRAY);
-    glVertexPointer(2, GL_FLOAT, 0, adjustedVertices);
-    glDrawArrays(GL_QUADS, 0, 4);
-    glDisableClientState(GL_VERTEX_ARRAY);
+// Game state
+Ball ball = {0.0f, -0.8f, 0.05f, 0.0f, 0.0f};
+std::vector<Bottle> bottles;
+int throws = 0;
+bool ballInMotion = false;
+const float trackLeftEdge = -0.5f;
+const float trackRightEdge = 0.5f;
+const float toppledDuration = 3.0f; // Time in seconds before a toppled bottle disappears
+float timeSinceLastBottleDisappeared = 0.0f; // Time since the last bottle disappeared
+
+void initBottles() {
+    bottles.clear();
+    float startX = 0.0f;
+    float startY = 0.8f;
+    float spacing = 0.1f;
+    int bottleCount = 4;
+    for (int i = 0; i < 4; ++i) {
+        for (int j = 0; j < bottleCount; ++j) {
+            bottles.push_back({startX + (j - bottleCount / 2.0f) * spacing, startY - i * spacing, 0.03f, 0.0f, 0.0f, false, 0.0f});
+        }
+        bottleCount--;
+    }
 }
 
-void renderBall()
-{
-    const int numSegments = 50; // Reduced number of segments
+void renderCircle(float x, float y, float radius) {
+    const int numSegments = 50;
     float angleStep = 2.0f * 3.14f / numSegments;
 
     glBegin(GL_TRIANGLE_FAN);
-    glVertex2f(ballX, ballY);
-    for (int i = 0; i <= numSegments; ++i)
-    {
+    glVertex2f(x, y);
+    for (int i = 0; i <= numSegments; ++i) {
         float angle = i * angleStep;
-        float x = ballX + cos(angle) * ballRadius;
-        float y = ballY + sin(angle) * ballRadius;
-        glVertex2f(x, y);
+        float px = x + cos(angle) * radius;
+        float py = y + sin(angle) * radius;
+        glVertex2f(px, py);
     }
     glEnd();
 }
 
-void processInput(GLFWwindow* window)
-{
-    constexpr float moveSpeed = 0.01f;
-
-    if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
-        posX -= moveSpeed;
-    if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
-        posX += moveSpeed;
-
-    if (posX < -1.0f)
-        posX = -1.0f;
-    if (posX > 1.0f)
-        posX = 1.0f;
+void renderTrackEdges() {
+    glBegin(GL_LINES);
+    glVertex2f(trackLeftEdge, -1.0f);
+    glVertex2f(trackLeftEdge, 1.0f);
+    glVertex2f(trackRightEdge, -1.0f);
+    glVertex2f(trackRightEdge, 1.0f);
+    glEnd();
 }
 
-void resetPosition()
-{
-    posX = 0.0f;
+void renderText(float x, float y, const std::string& text) {
+
 }
 
-void framebuffer_size_callback(GLFWwindow* window, const int width, const int height)
-{
-    glViewport(0, 0, width, height);
-}
-
-void updateBall()
-{
-    ballX += ballVelocityX;
-    ballY += ballVelocityY;
-
-    // Check for collision with window edges
-    if (ballX - ballRadius < -1.0f || ballX + ballRadius > 1.0f)
-    {
-        ballVelocityX = -ballVelocityX;
+void processInput(GLFWwindow* window) {
+    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS && !ballInMotion) {
+        ball.velocityY = 0.02f;
+        ballInMotion = true;
     }
-    if (ballY + ballRadius > 1.0f)
-    {
-        ballVelocityY = -ballVelocityY;
+    if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS && !ballInMotion) {
+        ball.x -= 0.01f;
+        if (ball.x - ball.radius < trackLeftEdge) {
+            ball.x = trackLeftEdge + ball.radius;
+        }
     }
-
-    // Check for collision with rectangle
-    if (ballY - ballRadius < posY + 0.01f && ballY - ballRadius > posY - 0.01f &&
-        ballX > posX - 0.1f && ballX < posX + 0.1f)
-    {
-        ballVelocityY = -ballVelocityY;
-    }
-
-    // Check if ball hits the bottom of the window
-    if (ballY - ballRadius < -1.0f)
-    {
-        // Reset ball position
-        ballX = 0.0f;
-        ballY = 0.5f;
-        ballVelocityX = 0.006f;
-        ballVelocityY = -0.018f;
+    if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS && !ballInMotion) {
+        ball.x += 0.01f;
+        if (ball.x + ball.radius > trackRightEdge) {
+            ball.x = trackRightEdge - ball.radius;
+        }
     }
 }
 
-int main()
-{
+void updateBall() {
+    if (ballInMotion) {
+        ball.y += ball.velocityY;
+        if (ball.y > 1.0f) {
+            ballInMotion = false;
+            ball.y = -0.8f;
+            ball.velocityY = 0.0f;
+            throws++;
+            if (throws >= 2) {
+                timeSinceLastBottleDisappeared = 0.0f; // Reset the timer
+            }
+        }
+    }
+}
+
+void updateBottles(float deltaTime) {
+    for (auto& bottle : bottles) {
+        bottle.x += bottle.velocityX;
+        bottle.y += bottle.velocityY;
+        bottle.velocityX *= 0.99f; // Damping
+        bottle.velocityY *= 0.99f; // Damping
+        if (bottle.toppled) {
+            bottle.toppledTime += deltaTime;
+        }
+    }
+    // Remove bottles that have been toppled for longer than the duration
+    bottles.erase(std::remove_if(bottles.begin(), bottles.end(), [](const Bottle& bottle) {
+        return bottle.toppled && bottle.toppledTime > toppledDuration;
+    }), bottles.end());
+
+    // Update the timer if all bottles are gone
+    if (bottles.empty() && throws >= 2) {
+        timeSinceLastBottleDisappeared += deltaTime;
+        if (timeSinceLastBottleDisappeared > 3.0f) {
+            initBottles();
+            throws = 0;
+        }
+    }
+}
+
+void handleCollisions() {
+    // Ball and bottle collisions
+    for (auto& bottle : bottles) {
+        float dx = bottle.x - ball.x;
+        float dy = bottle.y - ball.y;
+        float distance = sqrt(dx * dx + dy * dy);
+        if (distance < ball.radius + bottle.radius) {
+            float angle = atan2(dy, dx);
+            float totalVelocity = sqrt(ball.velocityY * ball.velocityY);
+            bottle.velocityX = cos(angle) * totalVelocity;
+            bottle.velocityY = sin(angle) * totalVelocity;
+            bottle.toppled = true;
+        }
+    }
+
+    // Bottle and bottle collisions
+    for (size_t i = 0; i < bottles.size(); ++i) {
+        for (size_t j = i + 1; j < bottles.size(); ++j) {
+            float dx = bottles[j].x - bottles[i].x;
+            float dy = bottles[j].y - bottles[i].y;
+            float distance = sqrt(dx * dx + dy * dy);
+            if (distance < bottles[i].radius + bottles[j].radius) {
+                float angle = atan2(dy, dx);
+                float totalVelocity = sqrt(bottles[i].velocityX * bottles[i].velocityX + bottles[i].velocityY * bottles[i].velocityY);
+                bottles[j].velocityX = cos(angle) * totalVelocity;
+                bottles[j].velocityY = sin(angle) * totalVelocity;
+                bottles[i].toppled = true;
+                bottles[j].toppled = true;
+            }
+        }
+    }
+}
+
+void renderGame() {
+    // Render ball
+    glColor3f(1.0f, 1.0f, 1.0f); // Reset color to white
+    renderCircle(ball.x, ball.y, ball.radius);
+
+    // Render bottles
+    for (const auto& bottle : bottles) {
+        if (bottle.toppled) {
+            glColor3f(1.0f, 0.0f, 0.0f); // Red color for toppled bottles
+        } else {
+            glColor3f(1.0f, 1.0f, 1.0f); // White color for standing bottles
+        }
+        renderCircle(bottle.x, bottle.y, bottle.radius);
+    }
+
+    // Render track edges
+    glColor3f(1.0f, 1.0f, 1.0f); // Reset color to white
+    renderTrackEdges();
+
+    // Render number of toppled bottles
+    int toppledCount = std::count_if(bottles.begin(), bottles.end(), [](const Bottle& bottle) {
+        return bottle.toppled;
+    });
+    renderText(-0.9f, 0.9f, "Toppled Bottles: " + std::to_string(toppledCount));
+}
+
+int main() {
     // Initialize GLFW
-    if (!glfwInit())
-    {
+    if (!glfwInit()) {
         return -1;
     }
 
-    GLFWwindow* window = glfwCreateWindow(1600, 1000, "Game Engine", nullptr, nullptr);
-    if (!window)
-    {
+    GLFWwindow* window = glfwCreateWindow(1600, 1000, "Bowling Game", nullptr, nullptr);
+    if (!window) {
         glfwTerminate();
         return -1;
     }
@@ -134,30 +208,35 @@ int main()
     glfwSwapInterval(1);
 
     glViewport(0, 0, 1600, 1000);
-    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+    glfwSetFramebufferSizeCallback(window, [](GLFWwindow* window, int width, int height) {
+        glViewport(0, 0, width, height);
+    });
 
-    while (!glfwWindowShouldClose(window))
-    {
+    initBottles();
+
+    float lastTime = glfwGetTime();
+
+    while (!glfwWindowShouldClose(window)) {
+        // Calculate delta time
+        float currentTime = glfwGetTime();
+        float deltaTime = currentTime - lastTime;
+        lastTime = currentTime;
+
         // Input handling
         glfwPollEvents();
         processInput(window);
 
-        // Update ball position
+        // Update game state
         updateBall();
+        updateBottles(deltaTime);
+        handleCollisions();
 
         // Rendering code
         glClearColor(0.1f, 0.1f, 0.2f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        // Reset position
-        if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS)
-            resetPosition();
-
-        // Render the rectangle
-        renderRectangle();
-
-        // Render the ball
-        renderBall();
+        // Render game objects
+        renderGame();
 
         // Swap buffers
         glfwSwapBuffers(window);
