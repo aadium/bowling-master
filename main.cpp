@@ -1,4 +1,5 @@
 #include <GLFW/glfw3.h>
+#include <GLUT/glut.h>
 #include <cmath>
 #include <vector>
 #include <string>
@@ -9,6 +10,7 @@ struct Ball {
     float x, y;
     float radius;
     float velocityX, velocityY;
+    bool visible;
 };
 
 // Bottle properties
@@ -21,10 +23,11 @@ struct Bottle {
 };
 
 // Game state
-Ball ball = {0.0f, -0.8f, 0.05f, 0.0f, 0.0f};
+Ball ball = {0.0f, -0.8f, 0.05f, 0.0f, 0.0f, true}; // Initialize ball as visible
 std::vector<Bottle> bottles;
 int throws = 0;
 bool ballInMotion = false;
+bool gameOver = false; // Add game over flag
 const float trackLeftEdge = -0.5f;
 const float trackRightEdge = 0.5f;
 const float toppledDuration = 3.0f; // Time in seconds before a toppled bottle disappears
@@ -42,6 +45,8 @@ void initBottles() {
         }
         bottleCount--;
     }
+    ball.visible = true; // Show the ball when bottles are reset
+    gameOver = false; // Reset game over flag
 }
 
 void renderCircle(float x, float y, float radius) {
@@ -68,25 +73,18 @@ void renderTrackEdges() {
     glEnd();
 }
 
-// void renderText(float x, float y, const std::string& text) {
-//     glRasterPos2f(x, y);
-//     for (char c : text) {
-//         glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, c);
-//     }
-// }
-
 void processInput(GLFWwindow* window) {
-    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS && !ballInMotion) {
+    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS && !ballInMotion && !gameOver) {
         ball.velocityY = 0.02f;
         ballInMotion = true;
     }
-    if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS && !ballInMotion) {
+    if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS && !ballInMotion && !gameOver) {
         ball.x -= 0.01f;
         if (ball.x - ball.radius < trackLeftEdge) {
             ball.x = trackLeftEdge + ball.radius;
         }
     }
-    if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS && !ballInMotion) {
+    if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS && !ballInMotion && !gameOver) {
         ball.x += 0.01f;
         if (ball.x + ball.radius > trackRightEdge) {
             ball.x = trackRightEdge - ball.radius;
@@ -126,10 +124,10 @@ void updateBottles(float deltaTime) {
 
     // Update the timer if all bottles are gone
     if (bottles.empty() && throws >= 2) {
+        ball.visible = false; // Hide the ball when all bottles are gone
         timeSinceLastBottleDisappeared += deltaTime;
         if (timeSinceLastBottleDisappeared > 3.0f) {
-            initBottles();
-            throws = 0;
+            gameOver = true; // Set game over flag
         }
     }
 }
@@ -167,10 +165,19 @@ void handleCollisions() {
     }
 }
 
+void renderText(float x, float y, const std::string& text) {
+    glRasterPos2f(x, y);
+    for (char c : text) {
+        glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, c);
+    }
+}
+
 void renderGame() {
-    // Render ball
-    glColor3f(1.0f, 1.0f, 1.0f); // Reset color to white
-    renderCircle(ball.x, ball.y, ball.radius);
+    // Render ball if visible
+    if (ball.visible) {
+        glColor3f(1.0f, 1.0f, 1.0f); // Reset color to white
+        renderCircle(ball.x, ball.y, ball.radius);
+    }
 
     // Render bottles
     for (const auto& bottle : bottles) {
@@ -190,7 +197,14 @@ void renderGame() {
     int toppledCount = std::count_if(bottles.begin(), bottles.end(), [](const Bottle& bottle) {
         return bottle.toppled;
     });
-    //renderText(-0.9f, 0.9f, "Toppled Bottles: " + std::to_string(toppledCount));
+    renderText(-0.9f, 0.9f, "Toppled Bottles: " + std::to_string(toppledCount));
+}
+
+void renderFinalScore() {
+    // Render final score dialog
+    glColor3f(1.0f, 1.0f, 1.0f); // White color for text
+    renderText(-0.2f, 0.0f, "Final Score: " + std::to_string(throws));
+    renderText(-0.1f, -0.2f, "Press ESC to Close");
 }
 
 int main() {
@@ -230,16 +244,22 @@ int main() {
         processInput(window);
 
         // Update game state
-        updateBall();
-        updateBottles(deltaTime);
-        handleCollisions();
+        if (!gameOver) {
+            updateBall();
+            updateBottles(deltaTime);
+            handleCollisions();
+        }
 
         // Rendering code
         glClearColor(0.1f, 0.1f, 0.2f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        // Render game objects
-        renderGame();
+        // Render game objects or final score dialog
+        if (gameOver) {
+            renderFinalScore();
+        } else {
+            renderGame();
+        }
 
         // Swap buffers
         glfwSwapBuffers(window);
