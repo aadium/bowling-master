@@ -1,4 +1,5 @@
 #include <GLFW/glfw3.h>
+#include <GLUT/glut.h>
 #include <cmath>
 #include <vector>
 #include <string>
@@ -165,10 +166,10 @@ void handleCollisions() {
 }
 
 void renderText(float x, float y, const std::string& text) {
-    // glRasterPos2f(x, y);
-    // for (char c : text) {
-    //     glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, c);
-    // }
+    glRasterPos2f(x, y);
+    for (char c : text) {
+        glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, c);
+    }
 }
 
 void renderGame() {
