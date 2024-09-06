@@ -1,5 +1,4 @@
 #include <GLFW/glfw3.h>
-#include <GLUT/glut.h>
 #include <cmath>
 #include <vector>
 #include <string>
@@ -108,6 +107,26 @@ void updateBall() {
 }
 
 void updateBottles(float deltaTime) {
+    bool allBottlesToppled = std::all_of(bottles.begin(), bottles.end(), [](const Bottle& bottle) {
+        return bottle.toppled;
+        });
+
+    // Hide the ball if there are any toppled bottles
+    bool anyToppledBottles = std::any_of(bottles.begin(), bottles.end(), [](const Bottle& bottle) {
+        return bottle.toppled;
+        });
+
+    if (throws == 1 && anyToppledBottles) {
+        ball.visible = false; // Hide the ball if there are toppled bottles
+    }
+
+    if (allBottlesToppled && throws >= 2) {
+        timeSinceLastBottleDisappeared += deltaTime;
+        if (timeSinceLastBottleDisappeared > 3.0f) {
+            gameOver = true; // Set game over flag
+        }
+    }
+
     for (auto& bottle : bottles) {
         bottle.x += bottle.velocityX;
         bottle.y += bottle.velocityY;
@@ -117,18 +136,15 @@ void updateBottles(float deltaTime) {
             bottle.toppledTime += deltaTime;
         }
     }
+
     // Remove bottles that have been toppled for longer than the duration
     bottles.erase(std::remove_if(bottles.begin(), bottles.end(), [](const Bottle& bottle) {
         return bottle.toppled && bottle.toppledTime > toppledDuration;
-    }), bottles.end());
+        }), bottles.end());
 
-    // Update the timer if all bottles are gone
-    if (bottles.empty() && throws >= 2) {
-        ball.visible = false; // Hide the ball when all bottles are gone
-        timeSinceLastBottleDisappeared += deltaTime;
-        if (timeSinceLastBottleDisappeared > 3.0f) {
-            gameOver = true; // Set game over flag
-        }
+    // If all toppled bottles are removed, reset the ball visibility
+    if (!anyToppledBottles && throws >= 1) {
+        ball.visible = true; // Show the ball again when all toppled bottles are removed
     }
 }
 
@@ -166,10 +182,10 @@ void handleCollisions() {
 }
 
 void renderText(float x, float y, const std::string& text) {
-    glRasterPos2f(x, y);
+    /*glRasterPos2f(x, y);
     for (char c : text) {
         glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, c);
-    }
+    }*/
 }
 
 void renderGame() {

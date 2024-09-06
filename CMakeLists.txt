@@ -3,7 +3,7 @@ project(cpp_game)
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_executable(cpp_game main.cpp)
+add_executable(cpp_game main.cpp "include/GL/glut.h" "include/GL/glxew.h" "include/GL/wglew.h" "include/GLFW/glfw3.h" "include/GLFW/glfw3native.h")
 
 add_library(glfw STATIC IMPORTED)
 set_target_properties(glfw PROPERTIES
@@ -11,5 +11,11 @@ set_target_properties(glfw PROPERTIES
         INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/Dependencies/glfw/include"
 )
 
+add_library(glut STATIC IMPORTED)
+set_target_properties(glut PROPERTIES
+        IMPORTED_LOCATION "${CMAKE_CURRENT_SOURCE_DIR}/Dependencies/glut/lib/glut.lib"
+        INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/Dependencies/glut/include"
+)
+
 find_package(OpenGL REQUIRED)
-target_link_libraries(cpp_game glfw OpenGL::GL)
+target_link_libraries(cpp_game glfw glut OpenGL::GL)
