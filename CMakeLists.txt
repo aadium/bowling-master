@@ -11,11 +11,11 @@ set_target_properties(glfw PROPERTIES
         INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/Dependencies/glfw/include"
 )
 
-add_library(glut STATIC IMPORTED)
-set_target_properties(glut PROPERTIES
-        IMPORTED_LOCATION "${CMAKE_CURRENT_SOURCE_DIR}/Dependencies/glut/lib/glut.lib"
-        INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/Dependencies/glut/include"
+add_library(freeglut STATIC IMPORTED)
+set_target_properties(freeglut PROPERTIES
+        IMPORTED_LOCATION "${CMAKE_CURRENT_SOURCE_DIR}/Dependencies/freeglut/lib/libfreeglut.dll.a"
+        INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/Dependencies/freeglut/include"
 )
 
 find_package(OpenGL REQUIRED)
-target_link_libraries(cpp_game glfw OpenGL::GL)
+target_link_libraries(cpp_game glfw freeglut OpenGL::GL)
