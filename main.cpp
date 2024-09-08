@@ -47,6 +47,9 @@ void initBottles() {
     }
     ball.visible = true; // Show the ball when bottles are reset
     gameOver = false; // Reset game over flag
+    throws = 0; // Reset throws
+    ballInMotion = false; // Reset ball motion
+    timeSinceLastBottleDisappeared = 0.0f; // Reset timer
 }
 
 void renderCircle(float x, float y, float radius) {
@@ -90,6 +93,9 @@ void processInput(GLFWwindow* window) {
             ball.x = trackRightEdge - ball.radius;
         }
     }
+    if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS && gameOver) {
+        initBottles(); // Reset the game state
+    }
 }
 
 void updateBall() {
@@ -110,12 +116,12 @@ void updateBall() {
 void updateBottles(float deltaTime) {
     bool allBottlesToppled = std::all_of(bottles.begin(), bottles.end(), [](const Bottle& bottle) {
         return bottle.toppled;
-        });
+    });
 
     // Hide the ball if there are any toppled bottles
     bool anyToppledBottles = std::any_of(bottles.begin(), bottles.end(), [](const Bottle& bottle) {
         return bottle.toppled;
-        });
+    });
 
     if (throws == 1 && anyToppledBottles) {
         ball.visible = false; // Hide the ball if there are toppled bottles
@@ -141,7 +147,7 @@ void updateBottles(float deltaTime) {
     // Remove bottles that have been toppled for longer than the duration
     bottles.erase(std::remove_if(bottles.begin(), bottles.end(), [](const Bottle& bottle) {
         return bottle.toppled && bottle.toppledTime > toppledDuration;
-        }), bottles.end());
+    }), bottles.end());
 
     // If all toppled bottles are removed, reset the ball visibility
     if (!anyToppledBottles && throws >= 1) {
@@ -221,14 +227,13 @@ void renderFinalScore() {
     // Render final score dialog
     glColor3f(1.0f, 1.0f, 1.0f); // White color for text
     renderText(-0.2f, 0.0f, "Final Score: " + std::to_string(throws));
-    renderText(-0.1f, -0.2f, "Press ESC to Close");
+    renderText(-0.1f, -0.2f, "Press R to Restart");
 }
 
 int main(int argc, char** argv) {
-
     // Initialize FreeGLUT
     glutInit(&argc, argv);
-    
+
     // Initialize GLFW
     if (!glfwInit()) {
         return -1;
