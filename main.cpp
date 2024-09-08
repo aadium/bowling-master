@@ -1,4 +1,5 @@
 #include <GLFW/glfw3.h>
+#include <GL/freeglut.h>
 #include <cmath>
 #include <vector>
 #include <string>
@@ -182,10 +183,10 @@ void handleCollisions() {
 }
 
 void renderText(float x, float y, const std::string& text) {
-    /*glRasterPos2f(x, y);
+    glRasterPos2f(x, y);
     for (char c : text) {
         glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, c);
-    }*/
+    }
 }
 
 void renderGame() {
@@ -223,7 +224,11 @@ void renderFinalScore() {
     renderText(-0.1f, -0.2f, "Press ESC to Close");
 }
 
-int main() {
+int main(int argc, char** argv) {
+
+    // Initialize FreeGLUT
+    glutInit(&argc, argv);
+    
     // Initialize GLFW
     if (!glfwInit()) {
         return -1;
