@@ -1,67 +1,22 @@
 #ifndef __glut_h__
 #define __glut_h__
 
-/* Copyright (c) Mark J. Kilgard, 1994, 1995, 1996, 1998. */
+/* Copyright (c) Mark J. Kilgard, 1994, 1995, 1996. */
 
 /* This program is freely distributable without licensing fees  and is
    provided without guarantee or warrantee expressed or  implied. This
    program is -not- in the public domain. */
 
-#if defined(_WIN32)
-
-/* GLUT 3.7 now tries to avoid including <windows.h>
-   to avoid name space pollution, but Win32's <GL/gl.h> 
-   needs APIENTRY and WINGDIAPI defined properly. */
-# if 0
-#  define  WIN32_LEAN_AND_MEAN
-#  include <windows.h>
-# else
-   /* XXX This is from Win32's <windef.h> */
-#  ifndef APIENTRY
-#   define GLUT_APIENTRY_DEFINED
-#   if (_MSC_VER >= 800) || defined(_STDCALL_SUPPORTED)
-#    define APIENTRY    __stdcall
-#   else
-#    define APIENTRY
-#   endif
-#  endif
-   /* XXX This is from Win32's <winnt.h> */
-#  ifndef CALLBACK
-#   if (defined(_M_MRX000) || defined(_M_IX86) || defined(_M_ALPHA) || defined(_M_PPC)) && !defined(MIDL_PASS)
-#    define CALLBACK __stdcall
-#   else
-#    define CALLBACK
-#   endif
-#  endif
-   /* XXX This is from Win32's <wingdi.h> and <winnt.h> */
-#  ifndef WINGDIAPI
-#   define GLUT_WINGDIAPI_DEFINED
-#   define WINGDIAPI __declspec(dllimport)
-#  endif
-   /* XXX This is from Win32's <ctype.h> */
-#  ifndef _WCHAR_T_DEFINED
-typedef unsigned short wchar_t;
-#   define _WCHAR_T_DEFINED
-#  endif
-# endif
-
-#pragma comment (lib, "winmm.lib")     /* link with Windows MultiMedia lib */
-#pragma comment (lib, "opengl32.lib")  /* link with Microsoft OpenGL lib */
-#pragma comment (lib, "glu32.lib")     /* link with OpenGL Utility lib */
-#pragma comment (lib, "glut32.lib")    /* link with Win32 GLUT lib */
-
-#pragma warning (disable:4244)	/* Disable bogus conversion warnings. */
-#pragma warning (disable:4305)  /* VC++ 5.0 version of above warning. */
-
+#if defined(WIN32)
+#include <windows.h>
+#pragma warning (disable:4244)		/* disable bogus conversion warnings */
 #endif
-
 #include <GL/gl.h>
 #include <GL/glu.h>
 
 /* define APIENTRY and CALLBACK to null string if we aren't on Win32 */
-#if !defined(_WIN32)
+#if !defined(WIN32)
 #define APIENTRY
-#define GLUT_APIENTRY_DEFINED
 #define CALLBACK
 #endif
 
@@ -86,9 +41,7 @@ extern "C" {
 
  GLUT_API_VERSION=4  glutInitDisplayString, glutWarpPointer,
  glutBitmapLength, glutStrokeLength, glutWindowStatusFunc, dynamic
- video resize subAPI, glutPostWindowRedisplay, glutKeyboardUpFunc,
- glutSpecialUpFunc, glutIgnoreKeyRepeat, glutSetKeyRepeat,
- glutJoystickFunc, glutForceJoystickFunc (NOT FINALIZED!).
+ video resize subAPI, glutPostWindowRedisplay (NOT FINALIZED!).
 **/
 #ifndef GLUT_API_VERSION  /* allow this to be overriden */
 #define GLUT_API_VERSION		3
@@ -123,11 +76,9 @@ extern "C" {
  GLUT_XLIB_IMPLEMENTATION=11 Mesa 2.5's GLUT 3.6 release.
 
  GLUT_XLIB_IMPLEMENTATION=12 mjk's GLUT 3.6 release with early GLUT 4 routines + signal handling.
-
- GLUT_XLIB_IMPLEMENTATION=13 mjk's GLUT 3.7 release with GameGLUT support.
 **/
 #ifndef GLUT_XLIB_IMPLEMENTATION  /* Allow this to be overriden. */
-#define GLUT_XLIB_IMPLEMENTATION	13
+#define GLUT_XLIB_IMPLEMENTATION	12
 #endif
 
 /* Display mode bit masks. */
@@ -210,7 +161,7 @@ extern "C" {
 #define GLUT_NORMAL			0
 #define GLUT_OVERLAY			1
 
-#if defined(_WIN32)
+#if defined(WIN32)
 /* Stroke font constants (use these in GLUT program). */
 #define GLUT_STROKE_ROMAN		((void*)0)
 #define GLUT_STROKE_MONO_ROMAN		((void*)1)
@@ -297,9 +248,6 @@ extern void *glutBitmapHelvetica18;
 #if (GLUT_API_VERSION >= 2)
 #define GLUT_ELAPSED_TIME		700
 #endif
-#if (GLUT_API_VERSION >= 4 || GLUT_XLIB_IMPLEMENTATION >= 13)
-#define GLUT_WINDOW_FORMAT_ID		123
-#endif
 
 #if (GLUT_API_VERSION >= 2)
 /* glutDeviceGet parameters. */
@@ -313,15 +261,6 @@ extern void *glutBitmapHelvetica18;
 #define GLUT_NUM_BUTTON_BOX_BUTTONS	607
 #define GLUT_NUM_DIALS			608
 #define GLUT_NUM_TABLET_BUTTONS		609
-#endif
-#if (GLUT_API_VERSION >= 4 || GLUT_XLIB_IMPLEMENTATION >= 13)
-#define GLUT_DEVICE_IGNORE_KEY_REPEAT   610
-#define GLUT_DEVICE_KEY_REPEAT          611
-#define GLUT_HAS_JOYSTICK		612
-#define GLUT_OWNS_JOYSTICK		613
-#define GLUT_JOYSTICK_BUTTONS		614
-#define GLUT_JOYSTICK_AXES		615
-#define GLUT_JOYSTICK_POLL_RATE		616
 #endif
 
 #if (GLUT_API_VERSION >= 3)
@@ -451,37 +390,32 @@ extern void APIENTRY glutRemoveMenuItem(int item);
 extern void APIENTRY glutAttachMenu(int button);
 extern void APIENTRY glutDetachMenu(int button);
 
-/* GLUT window callback sub-API. */
-extern void APIENTRY glutDisplayFunc(void (*func)(void));
-extern void APIENTRY glutReshapeFunc(void (*func)(int width, int height));
-extern void APIENTRY glutKeyboardFunc(void (*func)(unsigned char key, int x, int y));
-extern void APIENTRY glutMouseFunc(void (*func)(int button, int state, int x, int y));
-extern void APIENTRY glutMotionFunc(void (*func)(int x, int y));
-extern void APIENTRY glutPassiveMotionFunc(void (*func)(int x, int y));
-extern void APIENTRY glutEntryFunc(void (*func)(int state));
-extern void APIENTRY glutVisibilityFunc(void (*func)(int state));
-extern void APIENTRY glutIdleFunc(void (*func)(void));
-extern void APIENTRY glutTimerFunc(unsigned int millis, void (*func)(int value), int value);
-extern void APIENTRY glutMenuStateFunc(void (*func)(int state));
+/* GLUT  sub-API. */
+extern void APIENTRY glutDisplayFunc(void (*)(void));
+extern void APIENTRY glutReshapeFunc(void (*)(int width, int height));
+extern void APIENTRY glutKeyboardFunc(void (*)(unsigned char key, int x, int y));
+extern void APIENTRY glutMouseFunc(void (*)(int button, int state, int x, int y));
+extern void APIENTRY glutMotionFunc(void (*)(int x, int y));
+extern void APIENTRY glutPassiveMotionFunc(void (*)(int x, int y));
+extern void APIENTRY glutEntryFunc(void (*)(int state));
+extern void APIENTRY glutVisibilityFunc(void (*)(int state));
+extern void APIENTRY glutIdleFunc(void (*)(void));
+extern void APIENTRY glutTimerFunc(unsigned int millis, void (*)(int value), int value);
+extern void APIENTRY glutMenuStateFunc(void (*)(int state));
 #if (GLUT_API_VERSION >= 2)
-extern void APIENTRY glutSpecialFunc(void (*func)(int key, int x, int y));
-extern void APIENTRY glutSpaceballMotionFunc(void (*func)(int x, int y, int z));
-extern void APIENTRY glutSpaceballRotateFunc(void (*func)(int x, int y, int z));
-extern void APIENTRY glutSpaceballButtonFunc(void (*func)(int button, int state));
-extern void APIENTRY glutButtonBoxFunc(void (*func)(int button, int state));
-extern void APIENTRY glutDialsFunc(void (*func)(int dial, int value));
-extern void APIENTRY glutTabletMotionFunc(void (*func)(int x, int y));
-extern void APIENTRY glutTabletButtonFunc(void (*func)(int button, int state, int x, int y));
+extern void APIENTRY glutSpecialFunc(void (*)(int key, int x, int y));
+extern void APIENTRY glutSpaceballMotionFunc(void (*)(int x, int y, int z));
+extern void APIENTRY glutSpaceballRotateFunc(void (*)(int x, int y, int z));
+extern void APIENTRY glutSpaceballButtonFunc(void (*)(int button, int state));
+extern void APIENTRY glutButtonBoxFunc(void (*)(int button, int state));
+extern void APIENTRY glutDialsFunc(void (*)(int dial, int value));
+extern void APIENTRY glutTabletMotionFunc(void (*)(int x, int y));
+extern void APIENTRY glutTabletButtonFunc(void (*)(int button, int state, int x, int y));
 #if (GLUT_API_VERSION >= 3)
-extern void APIENTRY glutMenuStatusFunc(void (*func)(int status, int x, int y));
-extern void APIENTRY glutOverlayDisplayFunc(void (*func)(void));
+extern void APIENTRY glutMenuStatusFunc(void (*)(int status, int x, int y));
+extern void APIENTRY glutOverlayDisplayFunc(void (*)(void));
 #if (GLUT_API_VERSION >= 4 || GLUT_XLIB_IMPLEMENTATION >= 9)
-extern void APIENTRY glutWindowStatusFunc(void (*func)(int state));
-#endif
-#if (GLUT_API_VERSION >= 4 || GLUT_XLIB_IMPLEMENTATION >= 13)
-extern void APIENTRY glutKeyboardUpFunc(void (*func)(unsigned char key, int x, int y));
-extern void APIENTRY glutSpecialUpFunc(void (*func)(int key, int x, int y));
-extern void APIENTRY glutJoystickFunc(void (*func)(unsigned int buttonMask, int x, int y, int z), int pollInterval);
+extern void APIENTRY glutWindowStatusFunc(void (*)(int state));
 #endif
 #endif
 #endif
@@ -545,52 +479,8 @@ extern void APIENTRY glutVideoPan(int x, int y, int width, int height);
 extern void APIENTRY glutReportErrors(void);
 #endif
 
-#if (GLUT_API_VERSION >= 4 || GLUT_XLIB_IMPLEMENTATION >= 13)
-/* GLUT device control sub-API. */
-/* glutSetKeyRepeat modes. */
-#define GLUT_KEY_REPEAT_OFF		0
-#define GLUT_KEY_REPEAT_ON		1
-#define GLUT_KEY_REPEAT_DEFAULT		2
-
-/* Joystick button masks. */
-#define GLUT_JOYSTICK_BUTTON_A		1
-#define GLUT_JOYSTICK_BUTTON_B		2
-#define GLUT_JOYSTICK_BUTTON_C		4
-#define GLUT_JOYSTICK_BUTTON_D		8
-
-extern void APIENTRY glutIgnoreKeyRepeat(int ignore);
-extern void APIENTRY glutSetKeyRepeat(int repeatMode);
-extern void APIENTRY glutForceJoystickFunc(void);
-
-/* GLUT game mode sub-API. */
-/* glutGameModeGet. */
-#define GLUT_GAME_MODE_ACTIVE           0
-#define GLUT_GAME_MODE_POSSIBLE         1
-#define GLUT_GAME_MODE_WIDTH            2
-#define GLUT_GAME_MODE_HEIGHT           3
-#define GLUT_GAME_MODE_PIXEL_DEPTH      4
-#define GLUT_GAME_MODE_REFRESH_RATE     5
-#define GLUT_GAME_MODE_DISPLAY_CHANGED  6
-
-extern void APIENTRY glutGameModeString(const char *string);
-extern int APIENTRY glutEnterGameMode(void);
-extern void APIENTRY glutLeaveGameMode(void);
-extern int APIENTRY glutGameModeGet(GLenum mode);
-#endif
-
 #ifdef __cplusplus
 }
 
 #endif
-
-#ifdef GLUT_APIENTRY_DEFINED
-# undef GLUT_APIENTRY_DEFINED
-# undef APIENTRY
-#endif
-
-#ifdef GLUT_WINGDIAPI_DEFINED
-# undef GLUT_WINGDIAPI_DEFINED
-# undef WINGDIAPI
-#endif
-
 #endif                  /* __glut_h__ */
