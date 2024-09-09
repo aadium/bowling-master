@@ -28,8 +28,10 @@ std::vector<Bottle> bottles;
 int throws = 0;
 bool ballInMotion = false;
 bool gameOver = false; // Add game over flag
+float powerLevel = 0.0f;
 const float trackLeftEdge = -0.5f;
 const float trackRightEdge = 0.5f;
+const float trackBottleContainment = 0.4f;
 const float toppledDuration = 3.0f; // Time in seconds before a toppled bottle disappears
 float timeSinceLastBottleDisappeared = 0.0f; // Time since the last bottle disappeared
 int totalToppled = 0;
@@ -51,6 +53,13 @@ void initBottles() {
     throws = 0; // Reset throws
     ballInMotion = false; // Reset ball motion
     timeSinceLastBottleDisappeared = 0.0f; // Reset timer
+}
+
+void renderText(float x, float y, const std::string& text) {
+    glRasterPos2f(x, y);
+    for (char c : text) {
+        glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, c);
+    }
 }
 
 void renderCircle(float x, float y, float radius) {
@@ -77,9 +86,36 @@ void renderTrackEdges() {
     glEnd();
 }
 
+void renderPowerBar(float powerLevel) {
+    float barWidth = 0.2f;
+    float barHeight = 0.05f;
+    float barX = -0.9f;
+    float barY = -0.9f;
+
+    renderText(-0.9f, -0.8f, "Power: " + std::to_string(powerLevel * 10) + "%");
+    // Render the background of the power bar
+    glColor3f(0.5f, 0.5f, 0.5f); // Gray color for the background
+    glBegin(GL_QUADS);
+    glVertex2f(barX, barY);
+    glVertex2f(barX + barWidth, barY);
+    glVertex2f(barX + barWidth, barY + barHeight);
+    glVertex2f(barX, barY + barHeight);
+    glEnd();
+
+    // Render the filled portion of the power bar
+    float filledWidth = barWidth * (powerLevel / 10.0f);
+    glColor3f(1.0f, 1.0f, 1.0f); // Green color for the filled portion
+    glBegin(GL_QUADS);
+    glVertex2f(barX, barY);
+    glVertex2f(barX + filledWidth, barY);
+    glVertex2f(barX + filledWidth, barY + barHeight);
+    glVertex2f(barX, barY + barHeight);
+    glEnd();
+}
+
 void processInput(GLFWwindow* window) {
     if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS && !ballInMotion && !gameOver) {
-        ball.velocityY = 0.02f;
+        ball.velocityY = 0.03f * ((powerLevel + 1) / 10);
         ballInMotion = true;
     }
     if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS && !ballInMotion && !gameOver) {
@@ -94,8 +130,21 @@ void processInput(GLFWwindow* window) {
             ball.x = trackRightEdge - ball.radius;
         }
     }
-    if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS && gameOver) {
+    if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS && !ballInMotion && !gameOver) {
+        powerLevel += 0.05;
+        if (powerLevel >= 10) {
+            powerLevel = 10;
+        }
+    }
+    if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS && !ballInMotion && !gameOver) {
+        powerLevel -= 0.05;
+        if (powerLevel <= 0) {
+            powerLevel = 0;
+        }
+    }
+    if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS) {
         totalToppled = 0;
+        powerLevel = 0;
         initBottles();
     }
 }
@@ -103,6 +152,7 @@ void processInput(GLFWwindow* window) {
 void updateBall() {
     if (ballInMotion) {
         ball.y += ball.velocityY;
+        ball.velocityY *= 0.999f;
         if (ball.y > 1.0f) {
             ballInMotion = false;
             ball.y = -0.8f;
@@ -139,9 +189,9 @@ void updateBottles(float deltaTime) {
     for (auto& bottle : bottles) {
         bottle.x += bottle.velocityX;
         bottle.y += bottle.velocityY;
-        bottle.velocityX *= 0.99f; // Damping
-        bottle.velocityY *= 0.99f; // Damping
-        if ((bottle.x + bottle.radius > 0.5f) || (bottle.x - bottle.radius < -0.5f)) {
+        bottle.velocityX *= 0.7f; // Damping
+        bottle.velocityY *= 0.7f; // Damping
+        if ((bottle.x + bottle.radius > trackRightEdge) || (bottle.x - bottle.radius < trackLeftEdge)) {
             bottle.velocityX = -bottle.velocityX;
         }
         if (bottle.toppled) {
@@ -203,13 +253,6 @@ void handleCollisions() {
     }
 }
 
-void renderText(float x, float y, const std::string& text) {
-    glRasterPos2f(x, y);
-    for (char c : text) {
-        glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, c);
-    }
-}
-
 // Update the renderGame function to use totalToppled without resetting it
 void renderGame() {
     // Render ball if visible
@@ -234,6 +277,7 @@ void renderGame() {
 
     // Render number of toppled bottles
     renderText(-0.9f, 0.9f, "Toppled Bottles: " + std::to_string(totalToppled));
+    renderPowerBar(powerLevel);
 }
 
 void renderFinalScore() {
