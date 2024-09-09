@@ -36,7 +36,7 @@ int totalToppled = 0;
 
 void initBottles() {
     bottles.clear();
-    float startX = 0.0f;
+    float startX = 0.05f;
     float startY = 0.8f;
     float spacing = 0.1f;
     int bottleCount = 4;
@@ -95,7 +95,8 @@ void processInput(GLFWwindow* window) {
         }
     }
     if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS && gameOver) {
-        initBottles(); // Reset the game state
+        totalToppled = 0;
+        initBottles();
     }
 }
 
@@ -128,7 +129,7 @@ void updateBottles(float deltaTime) {
         ball.visible = false; // Hide the ball if there are toppled bottles
     }
 
-    if (allBottlesToppled && throws >= 2) {
+    if (allBottlesToppled || throws >= 2) {
         timeSinceLastBottleDisappeared += deltaTime;
         if (timeSinceLastBottleDisappeared > 3.0f) {
             gameOver = true; // Set game over flag
@@ -140,6 +141,9 @@ void updateBottles(float deltaTime) {
         bottle.y += bottle.velocityY;
         bottle.velocityX *= 0.99f; // Damping
         bottle.velocityY *= 0.99f; // Damping
+        if ((bottle.x + bottle.radius > 0.5f) || (bottle.x - bottle.radius < -0.5f)) {
+            bottle.velocityX = -bottle.velocityX;
+        }
         if (bottle.toppled) {
             bottle.toppledTime += deltaTime;
         }
