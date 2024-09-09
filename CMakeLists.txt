@@ -1,13 +1,13 @@
 cmake_minimum_required(VERSION 3.19)
-project(cpp_game)
+project(bowling_master)
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_executable(cpp_game main.cpp)
+add_executable(bowling_master main.cpp)
 
 add_library(glfw STATIC IMPORTED)
 set_target_properties(glfw PROPERTIES
-        IMPORTED_LOCATION "${CMAKE_CURRENT_SOURCE_DIR}/Dependencies/glfw/lib-vc2022/libglfw3.a"
+        IMPORTED_LOCATION "${CMAKE_CURRENT_SOURCE_DIR}/Dependencies/glfw/lib/libglfw3.a"
         INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/Dependencies/glfw/include"
 )
 
@@ -18,4 +18,4 @@ set_target_properties(freeglut PROPERTIES
 )
 
 find_package(OpenGL REQUIRED)
-target_link_libraries(cpp_game glfw freeglut OpenGL::GL)
+target_link_libraries(bowling_master glfw freeglut OpenGL::GL)

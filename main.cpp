@@ -32,6 +32,7 @@ const float trackLeftEdge = -0.5f;
 const float trackRightEdge = 0.5f;
 const float toppledDuration = 3.0f; // Time in seconds before a toppled bottle disappears
 float timeSinceLastBottleDisappeared = 0.0f; // Time since the last bottle disappeared
+int totalToppled = 0;
 
 void initBottles() {
     bottles.clear();
@@ -155,6 +156,7 @@ void updateBottles(float deltaTime) {
     }
 }
 
+// Update the handleCollisions function to increment totalToppled only when a bottle is toppled for the first time
 void handleCollisions() {
     // Ball and bottle collisions
     for (auto& bottle : bottles) {
@@ -166,7 +168,10 @@ void handleCollisions() {
             float totalVelocity = sqrt(ball.velocityY * ball.velocityY);
             bottle.velocityX = cos(angle) * totalVelocity;
             bottle.velocityY = sin(angle) * totalVelocity;
-            bottle.toppled = true;
+            if (!bottle.toppled) {
+                bottle.toppled = true;
+                totalToppled++; // Increment totalToppled only when a bottle is toppled for the first time
+            }
         }
     }
 
@@ -181,8 +186,14 @@ void handleCollisions() {
                 float totalVelocity = sqrt(bottles[i].velocityX * bottles[i].velocityX + bottles[i].velocityY * bottles[i].velocityY);
                 bottles[j].velocityX = cos(angle) * totalVelocity;
                 bottles[j].velocityY = sin(angle) * totalVelocity;
-                bottles[i].toppled = true;
-                bottles[j].toppled = true;
+                if (!bottles[i].toppled) {
+                    bottles[i].toppled = true;
+                    totalToppled++; // Increment totalToppled only when a bottle is toppled for the first time
+                }
+                if (!bottles[j].toppled) {
+                    bottles[j].toppled = true;
+                    totalToppled++; // Increment totalToppled only when a bottle is toppled for the first time
+                }
             }
         }
     }
@@ -195,6 +206,7 @@ void renderText(float x, float y, const std::string& text) {
     }
 }
 
+// Update the renderGame function to use totalToppled without resetting it
 void renderGame() {
     // Render ball if visible
     if (ball.visible) {
@@ -217,16 +229,13 @@ void renderGame() {
     renderTrackEdges();
 
     // Render number of toppled bottles
-    int toppledCount = std::count_if(bottles.begin(), bottles.end(), [](const Bottle& bottle) {
-        return bottle.toppled;
-    });
-    renderText(-0.9f, 0.9f, "Toppled Bottles: " + std::to_string(toppledCount));
+    renderText(-0.9f, 0.9f, "Toppled Bottles: " + std::to_string(totalToppled));
 }
 
 void renderFinalScore() {
     // Render final score dialog
     glColor3f(1.0f, 1.0f, 1.0f); // White color for text
-    renderText(-0.2f, 0.0f, "Final Score: " + std::to_string(throws));
+    renderText(-0.1f, 0.0f, "Final Score: " + std::to_string(totalToppled));
     renderText(-0.1f, -0.2f, "Press R to Restart");
 }
 
