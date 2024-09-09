@@ -19,7 +19,7 @@ struct Bottle {
     float radius;
     float velocityX, velocityY;
     bool toppled;
-    float toppledTime; // Time since the bottle was toppled
+    float toppledTime;
 };
 
 // Game state
